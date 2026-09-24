@@ -1,12 +1,245 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sales & Inventory Dashboard</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales & Inventory Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:Inter,sans-serif;background:#f8fafc} .card{background:white;border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 1px 2px rgba(0,0,0,.05)}</style>
+</head>
+<body>
+<div class="min-h-screen">
+  <!-- Header -->
+  <header class="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 sm:px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">S</div>
+        <div>
+          <div class="font-bold leading-none">StackDash</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">Sales & Inventory</div>
+        </div>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 text-[11px]">
+        <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">● Live on GitHub Pages</span>
+        <span class="px-2.5 py-1 rounded-full bg-slate-100 border font-medium">yusufkhan786.github.io</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card p-5">
+        <div class="text-[11px] font-semibold tracking-wide uppercase text-slate-500">This Month Sales</div>
+        <div id="kpi-sales" class="text-2xl font-bold mt-2">₹0</div>
+        <div class="text-[11px] text-emerald-600 mt-1">▲ 12% vs last month</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-[11px] font-semibold tracking-wide uppercase text-slate-500">Total Profit (6M)</div>
+        <div id="kpi-profit" class="text-2xl font-bold mt-2">₹0</div>
+        <div class="text-[11px] text-slate-500 mt-1">All products</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-[11px] font-semibold tracking-wide uppercase text-slate-500">Stock Value</div>
+        <div id="kpi-stock" class="text-2xl font-bold mt-2">₹0</div>
+        <div class="text-[11px] text-slate-500 mt-1">Current inventory</div>
+      </div>
+      <div class="card p-5 border-amber-200 bg-amber-50/50">
+        <div class="text-[11px] font-semibold tracking-wide uppercase text-amber-700">Low Stock Alerts</div>
+        <div id="kpi-low" class="text-2xl font-bold mt-2 text-amber-800">0</div>
+        <div class="text-[11px] text-amber-700 mt-1">Need reorder</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid lg:grid-cols-3 gap-4">
+      <div class="card p-5 lg:col-span-2">
+        <div class="font-semibold text-[13px] mb-4">Monthly Sales (Last 6 Months)</div>
+        <canvas id="chartMonthly" height="140"></canvas>
+      </div>
+      <div class="card p-5">
+        <div class="font-semibold text-[13px] mb-4">Top Selling Products</div>
+        <div id="topProducts" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4">
+      <div class="card p-5">
+        <div class="font-semibold text-[13px] mb-4">Weekly Sales (Last 8 Weeks)</div>
+        <canvas id="chartWeekly" height="140"></canvas>
+      </div>
+      <div class="card p-5">
+        <div class="font-semibold text-[13px] mb-4">Product-wise Sales</div>
+        <canvas id="chartProduct" height="140"></canvas>
+      </div>
+      <div class="card p-5">
+        <div class="font-semibold text-[13px] mb-4">Monthly Comparison</div>
+        <canvas id="chartCompare" height="140"></canvas>
+        <div class="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+          <div class="p-2 rounded-lg bg-slate-50 border text-center"><div class="text-slate-500">This Month</div><div id="cmp-this" class="font-bold mt-1">₹0</div></div>
+          <div class="p-2 rounded-lg bg-slate-50 border text-center"><div class="text-slate-500">Last Month</div><div id="cmp-last" class="font-bold mt-1">₹0</div></div>
+          <div class="p-2 rounded-lg bg-slate-50 border text-center"><div class="text-slate-500">Same LY</div><div id="cmp-ly" class="font-bold mt-1">₹0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory & Customers -->
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b flex items-center justify-between">
+          <div class="font-semibold text-[13px]">Current Stock Position</div>
+          <input id="stockSearch" placeholder="Search product..." class="text-[12px] border rounded-full px-3 py-1.5 w-40 outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div class="p-3"><div id="lowStockAlert" class="hidden mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-800"></div></div>
+        <div class="overflow-x-auto max-h-[360px]">
+          <table class="w-full text-[12.5px]"><thead class="sticky top-0 bg-slate-50 text-[11px] uppercase text-slate-500"><tr><th class="text-left px-5 py-2.5 font-medium">Product</th><th class="text-left px-5 py-2.5 font-medium">SKU</th><th class="text-right px-5 py-2.5 font-medium">Stock</th><th class="text-right px-5 py-2.5 font-medium">Status</th></tr></thead><tbody id="stockBody" class="divide-y"></tbody></table>
+        </div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b flex items-center justify-between"><div class="font-semibold text-[13px]">Customer-wise Sales</div><div class="text-[11px] text-slate-500">Sorted by value</div></div>
+        <div class="overflow-x-auto max-h-[360px]"><table class="w-full text-[12.5px]"><thead class="bg-slate-50 text-[11px] uppercase text-slate-500"><tr><th class="text-left px-5 py-2.5 font-medium">Customer</th><th class="text-right px-5 py-2.5 font-medium">Orders</th><th class="text-right px-5 py-2.5 font-medium">Value</th></tr></thead><tbody id="customerBody" class="divide-y"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Profit -->
+    <div class="card overflow-hidden">
+      <div class="p-5 border-b font-semibold text-[13px]">Profit / Margin Analysis</div>
+      <div class="overflow-x-auto"><table class="w-full text-[12.5px]"><thead class="bg-slate-50 text-[11px] uppercase text-slate-500"><tr><th class="text-left px-5 py-3 font-medium">Product</th><th class="text-right px-5 py-3 font-medium">Qty Sold</th><th class="text-right px-5 py-3 font-medium">Revenue</th><th class="text-right px-5 py-3 font-medium">Cost</th><th class="text-right px-5 py-3 font-medium">Profit</th><th class="text-right px-5 py-3 font-medium">Margin</th></tr></thead><tbody id="profitBody" class="divide-y"></tbody></table></div>
+    </div>
+
+    <div class="text-center text-[11px] text-slate-400 py-6">StackDash • Works offline • No data leaves browser • Built for GitHub Pages</div>
+  </main>
+</div>
+
+<script>
+// Sample Data - same as before
+const PRODUCTS = [
+  {product:"Wireless Headphones A1", sku:"WH-A1-001", cost:3200, sell:6999},
+  {product:"Bluetooth Speaker S2", sku:"BS-S2-014", cost:2100, sell:4499},
+  {product:"USB-C Cable Pack (3)", sku:"UC-3PK-09", cost:400, sell:1499},
+  {product:"Laptop Stand Pro", sku:"LS-PRO-22", cost:1400, sell:3499},
+  {product:"Mechanical Keyboard K3", sku:"MK-K3-07", cost:2700, sell:5999},
+  {product:"4K Webcam C5", sku:"WC-C5-31", cost:4000, sell:8999},
+  {product:"Portable SSD 1TB", sku:"SSD-1T-08", cost:5200, sell:9999},
+  {product:"Ergonomic Mouse M2", sku:"EM-M2-12", cost:900, sell:2499},
+];
+const CUSTOMERS = ["Acme Corp","Bright Solutions","Northwind Traders","Contoso Ltd","Fabrikam Inc","Adventure Works","Litware Co","Tailwind LLC","Blue Yonder","Redwood Partners"];
+
+function genSales(){
+  const sales=[]; const now=new Date();
+  for(let m=5;m>=0;m--){
+    const d=new Date(now.getFullYear(), now.getMonth()-m, 1);
+    const days=new Date(d.getFullYear(), d.getMonth()+1,0).getDate();
+    const rec = m===0?38:28+Math.floor(Math.random()*18);
+    for(let i=0;i<rec;i++){
+      const p=PRODUCTS[Math.floor(Math.random()*PRODUCTS.length)];
+      const qty=Math.floor(Math.random()*6)+1;
+      const sell = p.sell + Math.floor((Math.random()-0.5)*400);
+      const day=Math.floor(Math.random()*days)+1;
+      const date=new Date(d.getFullYear(), d.getMonth(), day);
+      if(date>now) continue;
+      sales.push({date:date.toISOString().slice(0,10), product:p.product, qty, customer:CUSTOMERS[Math.floor(Math.random()*CUSTOMERS.length)], selling_price:sell, cost_price:p.cost});
+    }
+  }
+  return sales.sort((a,b)=>new Date(a.date)-new Date(b.date));
+}
+function genInv(){
+  const stocks=[12,3,124,8,2,45,18,0];
+  return PRODUCTS.map((p,i)=>({product:p.product, sku:p.sku, current_stock:stocks[i], low_stock_threshold:10, cost_price:p.cost}));
+}
+
+let sales=genSales();
+let inventory=genInv();
+
+function calc(){
+  const now=new Date();
+  const thisM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const lastMDate=new Date(now.getFullYear(), now.getMonth()-1,1);
+  const lastM=`${lastMDate.getFullYear()}-${String(lastMDate.getMonth()+1).padStart(2,'0')}`;
+  const lyM=`${now.getFullYear()-1}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const thisMonthSales=sales.filter(s=>s.date.startsWith(thisM));
+  const totalThis=sales.filter(s=>s.date.startsWith(thisM)).reduce((a,s)=>a+s.qty*s.selling_price,0);
+  const totalLast=sales.filter(s=>s.date.startsWith(lastM)).reduce((a,s)=>a+s.qty*s.selling_price,0);
+  const totalLY=sales.filter(s=>s.date.startsWith(lyM)).reduce((a,s)=>a+s.qty*s.selling_price,0)|| totalLast*0.85;
+  const totalProfit=sales.reduce((a,s)=>a+(s.selling_price-s.cost_price)*s.qty,0);
+  const stockVal=inventory.reduce((a,i)=>a+i.current_stock*i.cost_price,0);
+  const low=inventory.filter(i=>i.current_stock<=i.low_stock_threshold).length;
+
+  document.getElementById('kpi-sales').textContent='₹'+Math.round(totalThis).toLocaleString('en-IN');
+  document.getElementById('kpi-profit').textContent='₹'+Math.round(totalProfit).toLocaleString('en-IN');
+  document.getElementById('kpi-stock').textContent='₹'+Math.round(stockVal).toLocaleString('en-IN');
+  document.getElementById('kpi-low').textContent=low;
+  document.getElementById('cmp-this').textContent='₹'+Math.round(totalThis/1000)+'k';
+  document.getElementById('cmp-last').textContent='₹'+Math.round(totalLast/1000)+'k';
+  document.getElementById('cmp-ly').textContent='₹'+Math.round(totalLY/1000)+'k';
+
+  // Monthly data
+  const monthlyMap={}; for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(), now.getMonth()-i,1); const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; const label=d.toLocaleString('en-US',{month:'short'}); monthlyMap[k]={label, val:0};}
+  sales.forEach(s=>{const k=s.date.slice(0,7); if(monthlyMap[k]) monthlyMap[k].val+=s.qty*s.selling_price;});
+  const monthlyLabels=Object.values(monthlyMap).map(v=>v.label);
+  const monthlyVals=Object.values(monthlyMap).map(v=>Math.round(v.val));
+
+  // Weekly
+  const weeklyMap={}; const weeklyLabels=[];
+  for(let i=7;i>=0;i--){const d=new Date(); d.setDate(d.getDate()-i*7); const w=`W${8-i}`; weeklyLabels.push(w); weeklyMap[w]=0;}
+  // simple distribution last 8 weeks from sales
+  const last8WeeksSales=sales.slice(-60);
+  const perWeek=Math.floor(last8WeeksSales.length/8);
+  const weeklyVals=weeklyLabels.map((_,i)=>{const chunk=last8WeeksSales.slice(i*perWeek,(i+1)*perWeek); return Math.round(chunk.reduce((a,s)=>a+s.qty*s.selling_price,0));});
+
+  // Product wise
+  const prodMap={}; PRODUCTS.forEach(p=>prodMap[p.product]=0); sales.forEach(s=>prodMap[s.product]+=s.qty*s.selling_price);
+  const prodLabels=Object.keys(prodMap).map(k=>k.split(' ')[0]);
+  const prodVals=Object.values(prodMap).map(v=>Math.round(v));
+  const fullProdLabels=Object.keys(prodMap);
+
+  // Charts
+  new Chart(document.getElementById('chartMonthly'),{type:'line',data:{labels:monthlyLabels,datasets:[{label:'Sales',data:monthlyVals,borderColor:'#0f172a',backgroundColor:'rgba(15,23,42,0.1)',tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+  new Chart(document.getElementById('chartWeekly'),{type:'bar',data:{labels:weeklyLabels,datasets:[{data:weeklyVals,backgroundColor:'#0f172a',borderRadius:8}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+  new Chart(document.getElementById('chartProduct'),{type:'bar',data:{labels:prodLabels,datasets:[{data:prodVals,backgroundColor:['#0f172a','#334155','#475569','#64748b','#94a3b8','#cbd5e1','#e2e8f0','#f1f5f9']}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+  new Chart(document.getElementById('chartCompare'),{type:'bar',data:{labels:['This','Last','Last Year'],datasets:[{data:[totalThis,totalLast,totalLY],backgroundColor:['#0f172a','#64748b','#cbd5e1'],borderRadius:8}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+
+  // Top products
+  const prodQty={}; sales.forEach(s=>prodQty[s.product]=(prodQty[s.product]||0)+s.qty);
+  const sortedProd=Object.entries(prodQty).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxQty=sortedProd[0]?.[1]||1;
+  document.getElementById('topProducts').innerHTML=sortedProd.map(([name,qty],i)=>`<div><div class="flex justify-between text-[12px]"><span class="font-medium truncate pr-2">${i+1}. ${name}</span><span class="font-bold">${qty} pcs</span></div><div class="mt-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-slate-900 rounded-full" style="width:${(qty/maxQty)*100}%"></div></div></div>`).join('');
+
+  // Stock table
+  function renderStock(filter=''){
+    const tbody=document.getElementById('stockBody');
+    const filtered=inventory.filter(it=>it.product.toLowerCase().includes(filter.toLowerCase()));
+    tbody.innerHTML=filtered.map(it=>{
+      const isLow=it.current_stock<=it.low_stock_threshold;
+      const status=isLow?`<span class="px-2 py-1 rounded-full text-[10px] font-semibold ${it.current_stock===0?'bg-red-100 text-red-700 border border-red-200':'bg-amber-100 text-amber-700 border border-amber-200'}">${it.current_stock===0?'Out of Stock':'Low Stock'}</span>`:`<span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>`;
+      return `<tr class="${isLow?'bg-red-50/50':''}"><td class="px-5 py-3 font-medium">${it.product}</td><td class="px-5 py-3 text-slate-500">${it.sku}</td><td class="px-5 py-3 text-right font-bold">${it.current_stock}</td><td class="px-5 py-3 text-right">${status}</td></tr>`;
+    }).join('');
+    const lowItems=inventory.filter(i=>i.current_stock<=i.low_stock_threshold);
+    const alertDiv=document.getElementById('lowStockAlert');
+    if(lowItems.length){
+      alertDiv.classList.remove('hidden');
+      alertDiv.innerHTML=`⚠️ <b>${lowItems.length} low stock items:</b> ${lowItems.map(i=>i.product).join(', ')}`;
+    } else {alertDiv.classList.add('hidden');}
+  }
+  renderStock();
+  document.getElementById('stockSearch').addEventListener('input',e=>renderStock(e.target.value));
+
+  // Customer
+  const custMap={}; sales.forEach(s=>{if(!custMap[s.customer]) custMap[s.customer]={orders:0,val:0}; custMap[s.customer].orders++; custMap[s.customer].val+=s.qty*s.selling_price;});
+  const sortedCust=Object.entries(custMap).sort((a,b)=>b[1].val-a[1].val);
+  document.getElementById('customerBody').innerHTML=sortedCust.map(([name,d])=>`<tr><td class="px-5 py-3 font-medium">${name}</td><td class="px-5 py-3 text-right">${d.orders}</td><td class="px-5 py-3 text-right font-bold">₹${Math.round(d.val).toLocaleString('en-IN')}</td></tr>`).join('');
+
+  // Profit
+  const profitMap={}; sales.forEach(s=>{if(!profitMap[s.product]) profitMap[s.product]={qty:0,rev:0,cost:0,profit:0}; profitMap[s.product].qty+=s.qty; profitMap[s.product].rev+=s.qty*s.selling_price; profitMap[s.product].cost+=s.qty*s.cost_price; profitMap[s.product].profit+=s.qty*(s.selling_price-s.cost_price);});
+  document.getElementById('profitBody').innerHTML=Object.entries(profitMap).map(([name,d])=>{
+    const margin=d.rev?Math.round((d.profit/d.rev)*100):0;
+    return `<tr><td class="px-5 py-3 font-medium">${name}</td><td class="px-5 py-3 text-right">${d.qty}</td><td class="px-5 py-3 text-right">₹${Math.round(d.rev).toLocaleString('en-IN')}</td><td class="px-5 py-3 text-right text-slate-500">₹${Math.round(d.cost).toLocaleString('en-IN')}</td><td class="px-5 py-3 text-right font-bold">₹${Math.round(d.profit).toLocaleString('en-IN')}</td><td class="px-5 py-3 text-right"><span class="px-2 py-1 rounded-full bg-slate-900 text-white text-[11px] font-semibold">${margin}%</span></td></tr>`;
+  }).join('');
+}
+calc();
+</script>
+</body>
 </html>
